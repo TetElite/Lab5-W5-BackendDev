@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export default function ArticleFilter() {
   const [articles, setArticles] = useState([]);
-  // Fetch all articles when component mounts
+  const [allArticles, setAllArticles] = useState([]);
+  const [journalists, setJournalists] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedJournalist, setSelectedJournalist] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+
+  // Fetch all articles, journalists, and categories when component mounts
   useEffect(() => {
     fetchArticles();
     fetchJournalists();
@@ -10,50 +17,100 @@ export default function ArticleFilter() {
   }, []);
 
   const fetchArticles = async () => {
-    // Fetch articles from the API
+    // Example: fetch articles from your API or data-ex2.js if needed
+    // const res = await axios.get('http://localhost:5000/articles');
+    // setArticles(res.data);
+    const res = await axios.get("http://localhost:5000/articles");
+    setArticles(Array.isArray(res.data) ? res.data : []);
+    setAllArticles(Array.isArray(res.data) ? res.data : []);
   };
 
   const fetchJournalists = async () => {
-    // Fetch journalists from the API
+    try {
+      const res = await axios.get("http://localhost:5000/journalists");
+      setJournalists(res.data);
+    } catch (err) {
+      console.error("Error fetching journalists:", err);
+      setJournalists([]);
+    }
   };
 
   const fetchCategories = async () => {
-    // Fetch categories from the API
-  }
+    try {
+      const res = await axios.get("http://localhost:5000/categories");
+      setCategories(res.data);
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+      setCategories([]);
+    }
+  };
+
+  const handleApplyFilters = () => {
+    let filtered = allArticles;
+    if (selectedJournalist) {
+      filtered = filtered.filter(
+        (article) => String(article.journalistId) === selectedJournalist
+      );
+    }
+    if (selectedCategory) {
+      filtered = filtered.filter(
+        (article) => String(article.categoryId) === selectedCategory
+      );
+    }
+    setArticles(filtered);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedJournalist("");
+    setSelectedCategory("");
+    setArticles(allArticles);
+  };
 
   return (
     <div>
       <h2>Articles</h2>
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
+      <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
         <label htmlFor="journalistFilter">Filter by Journalist:</label>
-        <select id="journalistFilter">
+        <select
+          id="journalistFilter"
+          value={selectedJournalist}
+          onChange={(e) => setSelectedJournalist(e.target.value)}
+        >
           <option value="">All Journalists</option>
-          {/* Options for journalists */}
+          {journalists.map((j) => (
+            <option key={j.id} value={j.id}>
+              {j.name}
+            </option>
+          ))}
         </select>
 
         <label htmlFor="categoryFilter">Filter by Category:</label>
-        <select id="categoryFilter">
+        <select
+          id="categoryFilter"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
           <option value="">All Categories</option>
-          {/* Options for categories */}
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
         </select>
 
-        <button
-          onClick={() => {
-            // Logic to apply filters
-          }}
-        >Apply Filters</button>
-        <button
-          onClick={() => {
-            // Logic to reset filters
-          }}
-        >Reset Filters</button>
+        <button onClick={handleApplyFilters}>Apply Filters</button>
+        <button onClick={handleResetFilters}>Reset Filters</button>
       </div>
 
       <ul>
-        {articles.map(article => (
+        {articles.map((article) => (
           <li key={article.id}>
             <strong>{article.title}</strong> <br />
-            <small>By Journalist #{article.journalistId} | Category #{article.categoryId}</small><br />
+            <small>
+              By Journalist #{article.journalistId} | Category #
+              {article.categoryId}
+            </small>
+            <br />
             <button disabled>Delete</button>
             <button disabled>Update</button>
             <button disabled>View</button>
